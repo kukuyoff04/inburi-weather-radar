@@ -9,7 +9,7 @@
         body { margin: 0; padding: 0; background-color: #f4f4f9; font-family: sans-serif; }
         .header { text-align: center; padding: 15px; background: #2c3e50; color: white; }
         /* ทำให้แผนที่แสดงผลเต็มจอแบบสวยงาม */
-        #weather-map { width: 100vw; height: calc(100vh - 60px); } 
+        #weather-map { width: 100vw; height: calc(100vh - 60px); z-index: 1;} 
     </style>
 </head>
 <body>
@@ -22,7 +22,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
         // สร้างแผนที่ เล็งพิกัดไปที่ อ.อินทร์บุรี จ.สิงห์บุรี
-        var map = L.map('weather-map').setView([14.9833, 100.3333], 10);
+        var map = L.map('weather-map').setView([14.9833, 100.3333], 8); // ปรับ Zoom Level เป็น 8 เพื่อให้เห็นกว้างขึ้นและรองรับภาพเรดาร์ได้ดีกว่า
 
         // ใส่แผนที่ถนน
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -30,18 +30,30 @@
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // ดึง API เรดาร์ฝนแบบแม่นยำ 100% จาก RainViewer
+        // --- เริ่มต้นการดึง API เรดาร์ฝน (อัปเดตใหม่) ---
         fetch('https://api.rainviewer.com/public/weather-maps.json')
             .then(response => response.json())
             .then(data => {
+                // หาเวลาล่าสุดที่มีข้อมูลเรดาร์
                 var latestTime = data.radar.past[data.radar.past.length - 1].time;
-                
-                L.tileLayer(`https://tilecache.rainviewer.com/v2/radar/${latestTime}/256/{z}/{x}/{y}/2/1_1.png`, {
+                var host = data.host; // ดึงชื่อ host จาก API มาใช้โดยตรงเพื่อความเสถียร
+
+                // สร้าง URL ใหม่ให้ถูกต้องตามโครงสร้างล่าสุดของ RainViewer
+                // โครงสร้าง: https://{host}/v2/radar/{time}/{size}/{z}/{x}/{y}/{color}/{smooth}_{snow}.png
+                var radarUrl = `${host}/v2/radar/${latestTime}/256/{z}/{x}/{y}/2/1_1.png`;
+
+                L.tileLayer(radarUrl, {
                     opacity: 0.7,
-                    transparent: true
+                    transparent: true,
+                    attribution: '© RainViewer'
                 }).addTo(map);
+                
+                console.log("โหลดเรดาร์สำเร็จจาก:", radarUrl);
             })
-            .catch(error => console.error('ดึงข้อมูลไม่ได้:', error));
+            .catch(error => {
+                console.error('เกิดข้อผิดพลาดในการดึงข้อมูลเรดาร์ฝน:', error);
+                alert("ไม่สามารถดึงข้อมูลเรดาร์ฝนได้ในขณะนี้ กรุณาลองใหม่ภายหลัง");
+            });
     </script>
 
 </body>

@@ -21,8 +21,8 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
     <script>
-        // สร้างแผนที่ เล็งพิกัดไปที่ อ.อินทร์บุรี จ.สิงห์บุรี
-        var map = L.map('weather-map').setView([14.9833, 100.3333], 8); // ปรับ Zoom Level เป็น 8 เพื่อให้เห็นกว้างขึ้นและรองรับภาพเรดาร์ได้ดีกว่า
+        // สร้างแผนที่ เล็งพิกัดไปที่ อ.อินทร์บุรี จ.สิงห์บุรี (ซูมระดับ 9)
+        var map = L.map('weather-map').setView([14.9833, 100.3333], 9); 
 
         // ใส่แผนที่ถนน
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -30,19 +30,21 @@
             attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // --- เริ่มต้นการดึง API เรดาร์ฝน (อัปเดตใหม่) ---
+        // ดึง API เรดาร์ฝนจาก RainViewer
         fetch('https://api.rainviewer.com/public/weather-maps.json')
             .then(response => response.json())
             .then(data => {
-                // หาเวลาล่าสุดที่มีข้อมูลเรดาร์
                 var latestTime = data.radar.past[data.radar.past.length - 1].time;
-                var host = data.host; // ดึงชื่อ host จาก API มาใช้โดยตรงเพื่อความเสถียร
+                var host = data.host; 
 
-                // สร้าง URL ใหม่ให้ถูกต้องตามโครงสร้างล่าสุดของ RainViewer
-                // โครงสร้าง: https://{host}/v2/radar/{time}/{size}/{z}/{x}/{y}/{color}/{smooth}_{snow}.png
-                var radarUrl = `${host}/v2/radar/${latestTime}/256/{z}/{x}/{y}/2/1_1.png`;
+                // *** จุดสำคัญที่แก้ไข ***
+                // เปลี่ยนโครงสร้าง URL ให้ดึงภาพขนาด 512px แทน 256px
+                // https://{host}/v2/radar/{time}/512/{z}/{x}/{y}/2/1_1.png
+                var radarUrl = `${host}/v2/radar/${latestTime}/512/{z}/{x}/{y}/2/1_1.png`;
 
+                // และต้องระบุ tileSize เป็น 512 ด้วย
                 L.tileLayer(radarUrl, {
+                    tileSize: 512,  
                     opacity: 0.7,
                     transparent: true,
                     attribution: '© RainViewer'

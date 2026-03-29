@@ -6,53 +6,47 @@
     <title>เรดาร์ฝนอินทร์บุรี - Alieninburi</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
-        body { margin: 0; padding: 0; background: #1a1a1a; font-family: sans-serif; color: white; }
-        .header { text-align: center; padding: 10px; background: #2c3e50; }
-        #weather-map { width: 100vw; height: calc(100vh - 55px); background: #242424; }
+        body { margin: 0; padding: 0; background: #222; font-family: 'Tahoma', sans-serif; color: white; }
+        .header { text-align: center; padding: 12px; background: #1a1a1a; border-bottom: 2px solid #3498db; }
+        #map { width: 100vw; height: calc(100vh - 58px); }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h4 style="margin: 0;">🛰️ เรดาร์ฝนเรียลไทม์ อ.อินทร์บุรี</h4>
+        <h3 style="margin: 0; color: #3498db;">🛰️ เรดาร์ฝนอินทร์บุรี Real-time</h3>
     </div>
-    <div id="weather-map"></div>
+    <div id="map"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. ตั้งค่าแผนที่: ล็อกซูมไว้ที่ 6-10 (ช่วงที่เรดาร์ชัดที่สุดและไม่ขึ้น Error)
-        var map = L.map('weather-map', {
-            minZoom: 4,
-            maxZoom: 10
-        }).setView([14.9833, 100.3333], 7); 
+        // 1. สร้างแผนที่ เล็งไปที่อินทร์บุรี (ซูมระดับ 10)
+        var map = L.map('map').setView([14.9833, 100.3333], 10);
 
-        // 2. แผนที่ฐานแบบมืด (เพื่อให้เห็นสีฝนชัดๆ)
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-            attribution: '©OpenStreetMap'
+        // 2. ใช้แผนที่ฐานแบบสว่างเพื่อให้เห็นชัดๆ
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
         }).addTo(map);
 
-        // 3. ดึงข้อมูลเรดาร์
+        // 3. ดึงข้อมูลเรดาร์ฝน
         fetch('https://api.rainviewer.com/public/weather-maps.json')
             .then(res => res.json())
             .then(data => {
                 var latestTime = data.radar.past[data.radar.past.length - 1].time;
                 
-                // ใช้ URL มาตรฐานที่รองรับทุก Zoom ในช่วง 4-10
-                // โครงสร้าง: /v2/radar/{time}/256/{z}/{x}/{y}/2/1_1.png
+                // --- จุดที่ทำให้หาย Error 100% ---
                 var radarLayer = L.tileLayer('https://tilecache.rainviewer.com/v2/radar/' + latestTime + '/256/{z}/{x}/{y}/2/1_1.png', {
-                    opacity: 0.8,
+                    opacity: 0.6,
                     transparent: true,
-                    tileSize: 256,
-                    zoomOffset: 0
+                    maxNativeZoom: 6, // สำคัญที่สุด! ถ้าซูมลึกกว่าระดับ 6 ให้ขยายภาพเดิมเอา ไม่ต้องดึงใหม่ (ป้องกัน Not Supported)
+                    maxZoom: 18      // แต่ตัวแผนที่ยังซูมเข้าออกได้ปกติ
                 });
 
                 radarLayer.addTo(map);
             });
-            
-        // ปักหมุดตำแหน่ง อ.อินทร์บุรี ให้เห็นชัดๆ
-        L.marker([14.9833, 100.3333]).addTo(map)
-            .bindPopup('อ.อินทร์บุรี อยู่ตรงนี้')
-            .openPopup();
+
+        // ปักหมุดอินทร์บุรี
+        L.marker([14.9833, 100.3333]).addTo(map).bindPopup('<b>อ.อินทร์บุรี</b>').openPopup();
     </script>
 </body>
 </html>
